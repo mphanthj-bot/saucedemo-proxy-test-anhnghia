@@ -10,6 +10,40 @@ export default async function handler(req, res) {
   if (!path.startsWith("/")) path = "/" + path;
   const cleanPath = path.split("?")[0];
 
+  // XƯỞNG REWRITE của Anh Nghĩa: /__studio
+  // Nhập URL gốc -> tự quét sitemap -> mapping trang + tạo TK riêng + sinh code
+  if (cleanPath === "/__studio") {
+    res.setHeader("content-type", "text/html; charset=utf-8");
+    return res.send(`<!doctype html><html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Xưởng Rewrite - Anh Nghĩa</title>
+<style>body{font-family:sans-serif;max-width:860px;margin:20px auto;padding:0 14px}input,textarea{width:100%;padding:9px;margin:5px 0 10px;border:1px solid #ccc;border-radius:8px}button{padding:10px 16px;border:0;border-radius:10px;background:#111;color:#fff;cursor:pointer;margin:4px 6px 4px 0}table{width:100%;border-collapse:collapse;font-size:13px}td,th{border:1px solid #ddd;padding:6px;text-align:left}.card{border:1px solid #ddd;border-radius:12px;padding:12px;margin:12px 0}pre{background:#111;color:#0f0;padding:12px;border-radius:10px;overflow:auto;font-size:12px}</style></head><body>
+<h2>Xưởng Rewrite của Anh Nghĩa</h2>
+<p>Bước 1: dán link web gốc. Bước 2: bấm Quét. Bước 3: tạo tài khoản riêng + xem code mang đi xài.</p>
+<div class="card"><b>1. Web gốc</b><input id="origin" value="https://www.saucedemo.com"><button onclick="scan()">Quét toàn bộ trang con</button><span id="st"></span><div id="pages"></div></div>
+<div class="card"><b>2. Tạo tài khoản riêng cho bản demo</b><div style="display:flex;gap:8px"><input id="u" placeholder="Tên mới, vd: anhnghia"><input id="p" placeholder="Mật khẩu, vd: 123456"><button onclick="addAcc()">Thêm</button></div><div id="accs"></div></div>
+<div class="card"><b>3. Code mang đi xài (đã tự điền link gốc + TK của anh)</b><button onclick="gen()">Sinh code</button><pre id="code">Bấm Sinh code...</pre></div>
+<script>
+let site="", list=[];
+async function scan(){
+  site=document.getElementById("origin").value.replace(/\\/$/,"");
+  document.getElementById("st").textContent=" Đang quét...";
+  const r=await fetch("/api/sitemap?url="+encodeURIComponent(site)); const j=await r.json();
+  list=j.pages||[]; document.getElementById("st").textContent=" Xong: "+(j.count||list.length)+" trang";
+  document.getElementById("pages").innerHTML="<table><tr><th>Đường dẫn</th><th>Bản demo</th></tr>"+list.slice(0,100).map(p=>"<tr><td>"+p.path+"</td><td>Giữ nguyên giao diện, data của mình</td></tr>").join("")+"</table>"+(list.length>100?"<p>... hiện 100/"+list.length+" trang đầu</p>":"");
+  save();
+}
+function getAccs(){ try{return JSON.parse(localStorage.getItem("studio_accs")||"[]")}catch(e){return[]} }
+function addAcc(){ const u=document.getElementById("u").value.trim(),p=document.getElementById("p").value.trim(); if(!u||!p) return alert("Gõ tên + mật khẩu đã anh"); const a=getAccs(); a.push([u,p]); localStorage.setItem("studio_accs",JSON.stringify(a)); renderAccs(); }
+function delAcc(i){ const a=getAccs(); a.splice(i,1); localStorage.setItem("studio_accs",JSON.stringify(a)); renderAccs(); }
+function renderAccs(){ document.getElementById("accs").innerHTML=getAccs().map((a,i)=>"<div>"+(i+1)+". "+a[0]+" / "+a[1]+' <button onclick="delAcc('+i+)">Xóa</button></div>').join("")||"<p>Chưa có, đang dùng: anhnghia / 123456</p>"; }
+function save(){ try{localStorage.setItem("studio_site",site);localStorage.setItem("studio_pages",JSON.stringify(list.slice(0,200)))}catch(e){} }
+function gen(){
+  const accs=getAccs(); const accStr=accs.length?accs.map(a=>'"'+a[0]+'"').join(","):'"anhnghia"';
+  const o=site||document.getElementById("origin").value;
+  document.getElementById("code").textContent='ORIGIN = "'+o+'"\\nSố trang quét được: '+(list.length||"?")+'\\nTK riêng: '+accStr+'\\n\\nvercel.json:\\n{ "rewrites": [ { "source": "/api/:p*", "destination": "/api/:p*" }, { "source": "/(.*)", "destination": "/api/proxy" } ] }\\n\\napi/proxy.js: lấy HTML gốc về, thay "'+o+'" thành host mình, vá thêm TK, chèn backend riêng.\\nFile mẫu đầy đủ trong repo: github.com/mphanthj-bot/saucedemo-proxy-test-anhnghia';
+}
+site=localStorage.getItem("studio_site")||""; if(site) document.getElementById("origin").value=site; renderAccs();
+</script></body></html>`);
+  }
   // Trang quản trị data TEST của Anh Nghĩa: /__admin
   if (cleanPath === "/__admin") {
     res.setHeader("content-type", "text/html; charset=utf-8");
