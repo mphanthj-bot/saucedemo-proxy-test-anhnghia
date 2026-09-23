@@ -64,17 +64,24 @@ render();
       `<script>
 (function(){
   try{
-    const ov = JSON.parse(localStorage.getItem("anhnghia_overrides")||"null");
-    if(!ov) return;
+    function getOv(){ try{ return JSON.parse(localStorage.getItem("anhnghia_overrides")||"null"); }catch(e){ return null; } }
+    let busy = false;
     function apply(){
-      const names = document.querySelectorAll('[data-test="inventory-item-name"]');
-      const prices = document.querySelectorAll('[data-test="inventory-item-price"]');
-      names.forEach((el,i)=>{ if(ov[i]) el.textContent = ov[i][0]; });
-      prices.forEach((el,i)=>{ if(ov[i]) el.textContent = "$"+ov[i][1]; });
+      if(busy) return;
+      const ov = getOv();
+      if(!ov) return;
+      busy = true;
+      try{
+        const names = document.querySelectorAll('[data-test="inventory-item-name"]');
+        const prices = document.querySelectorAll('[data-test="inventory-item-price"]');
+        names.forEach((el,i)=>{ if(ov[i] && ov[i][0] && el.textContent !== ov[i][0]) el.textContent = ov[i][0]; });
+        prices.forEach((el,i)=>{ if(ov[i] && ov[i][1] && el.textContent !== "$"+ov[i][1]) el.textContent = "$"+ov[i][1]; });
+      }finally{ busy = false; }
     }
-    new MutationObserver(apply).observe(document.documentElement,{childList:true,subtree:true});
-    const t = setInterval(()=>{ apply(); if(document.querySelector('[data-test="inventory-item-name"]')) clearInterval(t); }, 500);
-    apply();
+    let n = 0;
+    const t = setInterval(()=>{ apply(); n++; if(n > 20) clearInterval(t); }, 800);
+    if(document.readyState !== "loading") apply();
+    else document.addEventListener("DOMContentLoaded", apply);
   }catch(e){}
 })();
 </script><div id="anhnghia-test" style="position:fixed;bottom:12px;right:12px;background:#111;color:#fff;padding:10px 14px;border-radius:12px;z-index:99999;font-family:sans-serif;font-size:13px">Bản TEST của Anh Nghĩa - tk: anhnghia / 123456 <a href="/__admin" style="color:#ffd66b;margin-left:8px">Chỉnh giá</a> <button style="margin-left:8px" onclick="alert('Tính năng mới chạy OK!')">Thử nút mới</button></div></body>`);
