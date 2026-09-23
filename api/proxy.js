@@ -30,7 +30,10 @@ function resetAll(){ localStorage.removeItem("anhnghia_overrides"); cur = [...GO
 render();
 </script></body></html>`);
   }
-  const target = ORIGIN + path;
+  // Trang .html con là route giả của app một trang: lấy vỏ app ở "/" để router tự vẽ
+  let fetchPath = path;
+  if (cleanPath.endsWith(".html") && cleanPath !== "/" && cleanPath !== "/index.html") fetchPath = "/";
+  const target = ORIGIN + fetchPath;
 
   let r;
   try {
